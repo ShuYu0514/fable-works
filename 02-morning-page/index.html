@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fdf9f0" id="meta-theme">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>朝のワンページ</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: linear-gradient(170deg, #fdf9f0 0%, #fbefe0 55%, #f6e3d2 100%);
+    --bg-flat: #fdf9f0;
+    --fg: #453f36;
+    --sub: #9a8f7f;
+    --hr: rgba(120,100,80,0.25);
+    --quote: #3c362c;
+    --card: rgba(255,255,255,0.55);
+    --accent: #b98a52;
+  }
+  [data-theme="dark"] {
+    --bg: linear-gradient(170deg, #0c1120 0%, #131a2e 60%, #1c2338 100%);
+    --bg-flat: #0c1120;
+    --fg: #e8e6df;
+    --sub: #8b90a3;
+    --hr: rgba(255,255,255,0.16);
+    --quote: #f2efe6;
+    --card: rgba(255,255,255,0.06);
+    --accent: #c9ae7e;
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg-flat);
+    background-image: var(--bg);
+    background-attachment: fixed;
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    transition: color 0.4s;
+  }
+  #app {
+    max-width: 480px;
+    min-height: 100dvh;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    padding: calc(30px + env(safe-area-inset-top)) 28px calc(18px + env(safe-area-inset-bottom));
+  }
+
+  /* ---- 日付 ---- */
+  .date-block { margin-bottom: 22px; position: relative; }
+  .date-main { font-size: 30px; font-weight: 700; letter-spacing: 0.02em; }
+  .date-main .dow { font-size: 19px; font-weight: 500; margin-left: 6px; }
+  .sub { font-size: 12.5px; margin-top: 5px; letter-spacing: 0.06em; color: var(--sub); }
+
+  #theme-btn {
+    position: absolute;
+    top: 0; right: -6px;
+    width: 38px; height: 38px;
+    border: none; background: none;
+    color: var(--sub);
+    font-size: 17px;
+    cursor: pointer;
+    opacity: 0.7;
+    border-radius: 50%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #theme-hint {
+    position: absolute;
+    top: 40px; right: 0;
+    font-size: 10.5px;
+    color: var(--sub);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+
+  /* ---- 天気 ---- */
+  .weather-card {
+    background: var(--card);
+    border-radius: 18px;
+    padding: 16px 18px 14px;
+    margin-bottom: 8px;
+    min-height: 96px;
+    transition: background 0.4s;
+  }
+  .weather-now { display: flex; align-items: center; gap: 12px; }
+  .weather-now .icon { font-size: 34px; line-height: 1; }
+  .weather-now .temp { font-size: 32px; font-weight: 300; }
+  .weather-now .desc { font-size: 13.5px; line-height: 1.5; }
+  .hourly {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 13px;
+    font-size: 11.5px;
+    text-align: center;
+  }
+  .hourly div span { display: block; }
+  .hourly .h-icon { font-size: 15px; margin: 3px 0; }
+  .weather-msg { font-size: 13px; color: var(--sub); line-height: 1.7; padding: 8px 0; }
+
+  /* ---- 位置設定 ---- */
+  .loc-setup .weather-msg { padding-bottom: 12px; }
+  .loc-btn {
+    display: inline-block;
+    border: 1px solid var(--hr);
+    background: none;
+    color: var(--fg);
+    font-size: 13px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    margin: 0 8px 8px 0;
+    font-family: inherit;
+  }
+  .loc-input {
+    width: 100%;
+    border: 1px solid var(--hr);
+    background: none;
+    color: var(--fg);
+    font-size: 14px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    font-family: inherit;
+    outline: none;
+  }
+  .loc-input::placeholder { color: var(--sub); }
+
+  .hr { height: 1px; margin: 26px 2px; background: var(--hr); }
+
+  /* ---- 一言 ---- */
+  .quote-block {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-bottom: 30px;
+  }
+  .quote-mark { font-size: 30px; opacity: 0.35; font-family: Georgia, serif; line-height: 1; }
+  .quote {
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+    font-size: 19px;
+    line-height: 2.05;
+    margin: 10px 2px 18px;
+    font-weight: 500;
+    color: var(--quote);
+  }
+  .quote.long { font-size: 17px; line-height: 1.95; }
+  .quote.short { font-size: 22px; }
+  .quote-src { font-size: 12px; letter-spacing: 0.05em; color: var(--sub); }
+  .quote-src::before { content: "— "; }
+
+  /* ---- フッター ---- */
+  .footer {
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    opacity: 0.45;
+    text-align: center;
+    line-height: 1.9;
+  }
+  .footer a, .footer button {
+    color: inherit;
+    background: none;
+    border: none;
+    font: inherit;
+    letter-spacing: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="date-block">
+    <div class="date-main" id="date-main"></div>
+    <div class="sub" id="date-sub"></div>
+    <button id="theme-btn" aria-label="テーマ切替">◐</button>
+    <div id="theme-hint"></div>
+  </div>
+
+  <div class="weather-card" id="weather-card">
+    <div class="weather-msg">天気を読み込んでいます…</div>
+  </div>
+
+  <div class="hr"></div>
+
+  <div class="quote-block">
+    <div class="quote-mark">“</div>
+    <div class="quote" id="quote-text"></div>
+    <div class="quote-src" id="quote-src"></div>
+  </div>
+
+  <div class="footer">
+    朝のワンページ · Fable Works 02<br>
+    Made with Claude Code (Fable 5) · <button id="loc-reset">位置設定</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const LS_LOC = "mp-location";
+const LS_THEME = "mp-theme";
+
+/* ================= テーマ ================= */
+const mql = window.matchMedia("(prefers-color-scheme: dark)");
+function themeMode() { return localStorage.getItem(LS_THEME) || "auto"; }
+function applyTheme() {
+  const mode = themeMode();
+  const dark = mode === "dark" || (mode === "auto" && mql.matches);
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  $("meta-theme").content = dark ? "#0c1120" : "#fdf9f0";
+}
+mql.addEventListener("change", applyTheme);
+$("theme-btn").addEventListener("click", () => {
+  const order = ["auto", "light", "dark"];
+  const next = order[(order.indexOf(themeMode()) + 1) % 3];
+  if (next === "auto") localStorage.removeItem(LS_THEME);
+  else localStorage.setItem(LS_THEME, next);
+  applyTheme();
+  const hint = $("theme-hint");
+  hint.textContent = { auto: "OSに追従", light: "ライト", dark: "ダーク" }[next];
+  hint.style.opacity = 1;
+  clearTimeout(hint._t);
+  hint._t = setTimeout(() => (hint.style.opacity = 0), 1500);
+});
+applyTheme();
+
+/* ================= 日付 ================= */
+const now = new Date();
+const DOW = ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"];
+function isoWeek(d) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  return Math.ceil(((t - yearStart) / 86400000 + 1) / 7);
+}
+$("date-main").innerHTML =
+  `${now.getMonth() + 1}月${now.getDate()}日<span class="dow">${DOW[now.getDay()]}</span>`;
+const subBase = `${now.getFullYear()}年 · 第${isoWeek(now)}週`;
+$("date-sub").textContent = subBase;
+
+/* ================= 一言（日付シードの決定的選択） ================= */
+fetch("quotes.json")
+  .then((r) => r.json())
+  .then((quotes) => {
+    const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+    const h = Math.abs(Math.imul(seed ^ 0x9e3779b9, 2654435761)) % quotes.length;
+    const q = quotes[h];
+    const el = $("quote-text");
+    el.textContent = q.text;
+    if (q.text.length >= 55) el.classList.add("long");
+    else if (q.text.length <= 14) el.classList.add("short");
+    $("quote-src").textContent = q.source;
+  })
+  .catch(() => {
+    $("quote-text").textContent = "（一言を読み込めませんでした）";
+  });
+
+/* ================= 天気 ================= */
+/* WMO weather code → 表示。位置情報は端末の localStorage のみに保存し、公開コードには含めない */
+const WMO = {
+  0:  ["快晴", "☀️", "🌙"],
+  1:  ["晴れ", "🌤️", "🌙"],
+  2:  ["薄曇り", "⛅", "☁️"],
+  3:  ["曇り", "☁️", "☁️"],
+  45: ["霧", "🌫️", "🌫️"], 48: ["霧氷", "🌫️", "🌫️"],
+  51: ["霧雨", "🌦️", "🌧️"], 53: ["霧雨", "🌦️", "🌧️"], 55: ["霧雨", "🌧️", "🌧️"],
+  56: ["着氷性の霧雨", "🌧️", "🌧️"], 57: ["着氷性の霧雨", "🌧️", "🌧️"],
+  61: ["小雨", "🌦️", "🌧️"], 63: ["雨", "🌧️", "🌧️"], 65: ["大雨", "🌧️", "🌧️"],
+  66: ["みぞれ", "🌨️", "🌨️"], 67: ["みぞれ", "🌨️", "🌨️"],
+  71: ["小雪", "🌨️", "🌨️"], 73: ["雪", "❄️", "❄️"], 75: ["大雪", "❄️", "❄️"], 77: ["霧雪", "🌨️", "🌨️"],
+  80: ["にわか雨", "🌦️", "🌧️"], 81: ["にわか雨", "🌧️", "🌧️"], 82: ["激しいにわか雨", "🌧️", "🌧️"],
+  85: ["にわか雪", "🌨️", "🌨️"], 86: ["にわか雪", "🌨️", "🌨️"],
+  95: ["雷雨", "⛈️", "⛈️"], 96: ["雷雨・ひょう", "⛈️", "⛈️"], 99: ["雷雨・ひょう", "⛈️", "⛈️"]
+};
+const wmo = (code) => WMO[code] || ["-", "·", "·"];
+const hhmm = (iso) => {
+  const [h, m] = iso.slice(11, 16).split(":");
+  return `${+h}:${m}`;
+};
+
+function getLoc() {
+  try { return JSON.parse(localStorage.getItem(LS_LOC)); } catch { return null; }
+}
+function saveLoc(lat, lon, name) {
+  localStorage.setItem(LS_LOC, JSON.stringify({
+    lat: Math.round(lat * 100) / 100,
+    lon: Math.round(lon * 100) / 100,
+    name: name || ""
+  }));
+}
+
+function showLocSetup(msg) {
+  const card = $("weather-card");
+  card.className = "weather-card loc-setup";
+  card.innerHTML = `
+    <div class="weather-msg">${msg || "天気の表示には位置情報が必要です（この端末にだけ保存されます）。"}</div>
+    <button class="loc-btn" id="use-geo">現在地を使う</button>
+    <input class="loc-input" id="city-input" type="text" placeholder="または都市名を入力（例: 東京）" enterkeyhint="search">
+    <div class="weather-msg" id="loc-status"></div>`;
+  $("use-geo").addEventListener("click", () => {
+    $("loc-status").textContent = "現在地を取得しています…";
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { saveLoc(pos.coords.latitude, pos.coords.longitude, ""); loadWeather(); },
+      () => { $("loc-status").textContent = "取得できませんでした。都市名で設定してください。"; },
+      { timeout: 10000 }
+    );
+  });
+  $("city-input").addEventListener("keydown", async (e) => {
+    if (e.key !== "Enter") return;
+    const name = e.target.value.trim();
+    if (!name) return;
+    $("loc-status").textContent = "検索しています…";
+    try {
+      // Open-Meteoのジオコーディングは2文字の日本語（例:「東京」）だと完全一致のみで
+      // 空になることがあるため、「市/都/県」を付けた表記も並列で検索し、人口最大の候補を採用する
+      const variants = [name, name + "市", name + "都", name + "県"];
+      const lists = await Promise.all(variants.map((v) =>
+        fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(v)}&count=3&language=ja&format=json`)
+          .then((r) => r.json()).then((j) => j.results || []).catch(() => [])
+      ));
+      const all = lists.flat();
+      if (all.length) {
+        all.sort((a, b) => (b.population || 0) - (a.population || 0));
+        const g = all[0];
+        saveLoc(g.latitude, g.longitude, g.name);
+        loadWeather();
+      } else {
+        $("loc-status").textContent = "見つかりませんでした。別の表記を試してください。";
+      }
+    } catch {
+      $("loc-status").textContent = "検索できませんでした（オフライン？）。";
+    }
+  });
+}
+
+async function loadWeather() {
+  const loc = getLoc();
+  if (!loc) { showLocSetup(); return; }
+  const card = $("weather-card");
+  card.className = "weather-card";
+  card.innerHTML = `<div class="weather-msg">天気を読み込んでいます…</div>`;
+  try {
+    const url = "https://api.open-meteo.com/v1/forecast"
+      + `?latitude=${loc.lat}&longitude=${loc.lon}`
+      + "&current=temperature_2m,weather_code,is_day"
+      + "&hourly=temperature_2m,weather_code"
+      + "&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset"
+      + "&timezone=auto&forecast_days=1";
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(r.status);
+    const j = await r.json();
+
+    const sunrise = j.daily.sunrise[0];
+    const sunset = j.daily.sunset[0];
+    $("date-sub").textContent = `${subBase} · 日の出 ${hhmm(sunrise)}`;
+
+    const cur = j.current;
+    const [label, dayIcon, nightIcon] = wmo(cur.weather_code);
+    const icon = cur.is_day ? dayIcon : nightIcon;
+    // 概況: 午前(9時)と午後(15時)のコードが違えば「AのちB」
+    const c9 = j.hourly.weather_code[9], c15 = j.hourly.weather_code[15];
+    let overview = wmo(c9)[0];
+    if (c9 !== c15) overview += "のち" + wmo(c15)[0];
+    const tmax = Math.round(j.daily.temperature_2m_max[0]);
+    const tmin = Math.round(j.daily.temperature_2m_min[0]);
+
+    const sunriseH = +sunrise.slice(11, 13), sunsetH = +sunset.slice(11, 13);
+    const hours = [6, 9, 12, 15, 18, 21];
+    const hourlyHtml = hours.map((h) => {
+      const [, dIcon, nIcon] = wmo(j.hourly.weather_code[h]);
+      const hIcon = h >= sunriseH && h < sunsetH ? dIcon : nIcon;
+      const t = Math.round(j.hourly.temperature_2m[h]);
+      return `<div><span>${h}時</span><span class="h-icon">${hIcon}</span><span>${t}°</span></div>`;
+    }).join("");
+
+    card.innerHTML = `
+      <div class="weather-now">
+        <div class="icon">${icon}</div>
+        <div class="temp">${Math.round(cur.temperature_2m)}°</div>
+        <div class="desc">${overview}${loc.name ? "（" + loc.name + "）" : ""}<br>最高 ${tmax}° / 最低 ${tmin}°</div>
+      </div>
+      <div class="hourly">${hourlyHtml}</div>`;
+  } catch {
+    card.innerHTML = `<div class="weather-msg">天気を取得できません${navigator.onLine ? "でした。" : "（オフライン）。"}<br><span style="font-size:11.5px">接続後に再読み込みすると表示されます。</span></div>`;
+  }
+}
+$("loc-reset").addEventListener("click", () => showLocSetup("位置を設定し直します。"));
+loadWeather();
+
+/* ================= PWA ================= */
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+</script>
+</body>
+</html>
