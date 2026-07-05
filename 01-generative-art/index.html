@@ -406,8 +406,201 @@ const galaxy = {
   },
 };
 
+// ---------- モード4: 太陽系 ----------
+const solar = {
+  label: '太陽系',
+  bg: '#020409',
+  planets: [], stars: [], comets: [], petrova: [],
+  t: 0, cometCooldown: 0,
+  baseCount() { return 0; },
+  setCount() {},
+  init() {
+    this.t = 0;
+    this.comets = [];
+    const maxR = Math.min(W, H) * 0.5 - 24;
+    this.maxR = maxR;
+    const fr = [0.16, 0.23, 0.30, 0.37, 0.52, 0.66, 0.80, 0.93];
+    const defs = [
+      { size: 2.6, color: '#9c8f84' },              // 水星
+      { size: 4.2, color: '#e6c58e' },              // 金星
+      { size: 4.6, color: '#5b8ff0', moon: true },  // 地球
+      { size: 3.6, color: '#d1603f' },              // 火星
+      { size: 11,  color: '#d8a56e' },              // 木星
+      { size: 9,   color: '#e0c084', ring: true },  // 土星
+      { size: 6.5, color: '#9fd8e0' },              // 天王星
+      { size: 6.2, color: '#5a78e8' },              // 海王星
+    ];
+    // ケプラー第3法則: 角速度 ∝ r^-1.5（地球の公転を約40秒に設定）
+    const wEarth = 0.0026;
+    this.planets = defs.map((d, i) => ({
+      ...d,
+      r: fr[i] * maxR,
+      w: wEarth * Math.pow(fr[2] / fr[i], 1.5),
+      a: Math.random() * TAU,
+      moonA: Math.random() * TAU,
+    }));
+    this.stars = Array.from({ length: Math.round(W * H / 6000) }, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      s: 0.5 + Math.random(), p: Math.random() * TAU,
+    }));
+    // ペトロヴァ線: 太陽⇄金星をつなぐ赤い流れ（Project Hail Maryへの小さな敬礼）
+    this.petrova = Array.from({ length: 36 }, () => ({
+      t: Math.random(), off: Math.random() * TAU,
+    }));
+  },
+  spawnComet() {
+    const cx = W / 2, cy = H / 2;
+    const ang = Math.atan2(pointer.y - cy, pointer.x - cx);
+    const dir = ang + Math.PI / 2 * (Math.random() < 0.5 ? 1 : -1) + (Math.random() - 0.5);
+    const v = 1.0 + Math.random() * 1.2;
+    this.comets.push({
+      x: pointer.x, y: pointer.y,
+      vx: Math.cos(dir) * v, vy: Math.sin(dir) * v,
+      trail: [], age: 0,
+    });
+    if (this.comets.length > 24) this.comets.shift();
+  },
+  frame(k) {
+    this.t += k;
+    const cx = W / 2, cy = H / 2;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = this.bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // 背景の星（またたき）
+    for (const st of this.stars) {
+      ctx.fillStyle = `rgba(220,230,255,${0.25 + 0.3 * Math.sin(this.t * 0.02 + st.p)})`;
+      ctx.fillRect(st.x, st.y, st.s, st.s);
+    }
+
+    // 軌道リング
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth = 1;
+    for (const p of this.planets) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, p.r, 0, TAU);
+      ctx.stroke();
+    }
+
+    // 太陽（かすかに脈動）
+    // 小画面では水星軌道を飲み込まないよう画面スケールに比例させる
+    const glowBase = Math.min(42, this.maxR * 0.13);
+    const glowR = glowBase + Math.sin(this.t * 0.03) * glowBase * 0.07;
+    let grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
+    grd.addColorStop(0, 'rgba(255,244,214,0.95)');
+    grd.addColorStop(0.3, 'rgba(255,210,120,0.5)');
+    grd.addColorStop(1, 'rgba(255,160,40,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(cx, cy, glowR, 0, TAU);
+    ctx.fill();
+
+    // ペトロヴァ線（太陽→金星の赤い流れ）
+    const venus = this.planets[1];
+    const vx = cx + Math.cos(venus.a) * venus.r;
+    const vy = cy + Math.sin(venus.a) * venus.r;
+    ctx.globalCompositeOperation = 'lighter';
+    for (const pt of this.petrova) {
+      pt.t += 0.0025 * k;
+      if (pt.t > 1) pt.t -= 1;
+      const px = cx + (vx - cx) * pt.t, py = cy + (vy - cy) * pt.t;
+      const sway = Math.sin(pt.t * Math.PI) * 6 * Math.sin(pt.off + this.t * 0.03);
+      const nx = -(vy - cy), ny = vx - cx;
+      const nl = Math.hypot(nx, ny) || 1;
+      ctx.fillStyle = 'rgba(255,80,50,0.4)';
+      ctx.fillRect(px + nx / nl * sway, py + ny / nl * sway, 1.6, 1.6);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+
+    // 惑星
+    for (const p of this.planets) {
+      p.a += p.w * k;
+      const x = cx + Math.cos(p.a) * p.r;
+      const y = cy + Math.sin(p.a) * p.r;
+      const ux = Math.cos(p.a), uy = Math.sin(p.a);  // 太陽と反対向きの単位ベクトル
+      if (p.ring) {
+        ctx.strokeStyle = 'rgba(224,192,132,0.5)';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.ellipse(x, y, p.size * 2.2, p.size * 0.8, -0.45, 0, TAU);
+        ctx.stroke();
+      }
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(x, y, p.size, 0, TAU);
+      ctx.fill();
+      // 太陽と反対側に影を落とす
+      grd = ctx.createRadialGradient(
+        x - ux * p.size * 0.6, y - uy * p.size * 0.6, p.size * 0.3,
+        x - ux * p.size * 0.6, y - uy * p.size * 0.6, p.size * 1.7);
+      grd.addColorStop(0, 'rgba(0,0,0,0)');
+      grd.addColorStop(0.55, 'rgba(0,0,0,0)');
+      grd.addColorStop(1, 'rgba(2,4,18,0.75)');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.arc(x, y, p.size, 0, TAU);
+      ctx.fill();
+      if (p.ring) {
+        // 環の手前側を惑星の上に描き直す
+        ctx.strokeStyle = 'rgba(224,192,132,0.5)';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.ellipse(x, y, p.size * 2.2, p.size * 0.8, -0.45, 0, Math.PI);
+        ctx.stroke();
+      }
+      if (p.moon) {
+        p.moonA += 0.025 * k;
+        ctx.fillStyle = '#c9c9d4';
+        ctx.beginPath();
+        ctx.arc(x + Math.cos(p.moonA) * 9.5, y + Math.sin(p.moonA) * 9.5, 1.4, 0, TAU);
+        ctx.fill();
+      }
+    }
+
+    // 彗星（タッチ/ドラッグで放つ。太陽の重力に従う）
+    if (pointer.active) {
+      this.cometCooldown -= k;
+      if (this.cometCooldown <= 0) {
+        this.spawnComet();
+        this.cometCooldown = 16;
+      }
+    } else {
+      this.cometCooldown = 0;
+    }
+    const Gc = 15000, sc = 900;
+    for (let i = this.comets.length - 1; i >= 0; i--) {
+      const c = this.comets[i];
+      const dx = cx - c.x, dy = cy - c.y;
+      const d2 = dx * dx + dy * dy;
+      const inv = Gc / Math.pow(d2 + sc, 1.5);
+      c.vx += dx * inv * k;
+      c.vy += dy * inv * k;
+      c.x += c.vx * k;
+      c.y += c.vy * k;
+      c.age += k;
+      c.trail.push(c.x, c.y);
+      if (c.trail.length > 100) c.trail.splice(0, 2);
+      const off = Math.max(W, H) * 0.7;
+      if (c.age > 2400 || c.x < cx - off || c.x > cx + off || c.y < cy - off || c.y > cy + off) {
+        this.comets.splice(i, 1);
+        continue;
+      }
+      ctx.strokeStyle = 'rgba(170,210,255,0.3)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(c.trail[0], c.trail[1]);
+      for (let j = 2; j < c.trail.length; j += 2) ctx.lineTo(c.trail[j], c.trail[j + 1]);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(235,245,255,0.95)';
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, 2.2, 0, TAU);
+      ctx.fill();
+    }
+  },
+};
+
 // ---------- モード管理・メインループ ----------
-const MODES = [flowField, boids, galaxy];
+const MODES = [flowField, boids, galaxy, solar];
 let mode = MODES[0];
 let quality = 1;  // 0.25〜1。フレーム時間で自動調整
 
