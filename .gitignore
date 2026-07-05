@@ -1,0 +1,5 @@
+# 個人文脈を含むプランは公開しない
+plans/
+
+# macOS
+.DS_Store
