@@ -323,21 +323,22 @@ const galaxy = {
   label: '銀河',
   bg: '#04060e',
   pts: [],
-  baseCount() { return Math.round(W * H / 260); },
+  baseCount() { return Math.round(W * H / 340); },
   spawn() {
     const cx = W / 2, cy = H / 2;
     const rMax = Math.min(W, H) * 0.46;
-    const r = 18 + Math.sqrt(Math.random()) * rMax;
+    // 指数<0.5で外側寄りの分布にする（0.5=一様密度）
+    const r = 40 + Math.pow(Math.random(), 0.35) * rMax;
     const a = Math.random() * TAU;
     const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
-    // ほぼ円軌道の初速（±10%の揺らぎで楕円に）
+    // ほぼ円軌道の初速（±6%の揺らぎで楕円に）
     const G = this.G, s = this.soft;
     const accel = G * r / Math.pow(r * r + s, 1.5);
-    const v = Math.sqrt(Math.max(accel * r, 0.0001)) * (0.9 + Math.random() * 0.2);
+    const v = Math.sqrt(Math.max(accel * r, 0.0001)) * (0.94 + Math.random() * 0.12);
     return { x, y, vx: -Math.sin(a) * v, vy: Math.cos(a) * v };
   },
-  G: 52000,
-  soft: 2600,
+  G: 13000,
+  soft: 1200,
   setCount(n) {
     const pts = this.pts;
     while (pts.length < n) pts.push(this.spawn());
@@ -379,7 +380,7 @@ const galaxy = {
         Object.assign(p, this.spawn());
       }
       const sp = Math.hypot(p.vx, p.vy);
-      let idx = Math.floor((sp - 10) * 1.7);
+      let idx = Math.floor((sp - 5.5) * 2.4);
       if (idx < 0) idx = 0; else if (idx >= NB) idx = NB - 1;
       buckets[idx].push(p.x, p.y);
     }
@@ -389,11 +390,11 @@ const galaxy = {
       if (!arr.length) continue;
       // 遅い(外縁)=青 → 紫 → 速い(中心付近)=琥珀。緑を通らない経路で回す
       const f = i / (NB - 1);
-      const hue = (220 + f * 175) % 360;
-      const light = 55 + f * 28;
-      ctx.fillStyle = `hsla(${hue}, ${80 - f * 25}%, ${light}%, 0.85)`;
+      const hue = (210 + f * 195) % 360;
+      const light = 48 + f * 38;
+      ctx.fillStyle = `hsla(${hue}, ${90 - f * 25}%, ${light}%, 0.9)`;
       for (let j = 0; j < arr.length; j += 2) {
-        ctx.fillRect(arr[j], arr[j + 1], 1.4, 1.4);
+        ctx.fillRect(arr[j], arr[j + 1], 2.2, 2.2);
       }
     }
     // 中心のコア
