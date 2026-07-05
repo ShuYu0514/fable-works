@@ -419,16 +419,17 @@ const solar = {
     this.comets = [];
     const maxR = Math.min(W, H) * 0.5 - 24;
     this.maxR = maxR;
-    const fr = [0.16, 0.23, 0.30, 0.37, 0.52, 0.66, 0.80, 0.93];
+    const fr = [0.19, 0.26, 0.33, 0.40, 0.54, 0.67, 0.81, 0.94];
+    // サイズは実比率でなくビジュアル優先
     const defs = [
-      { size: 2.6, color: '#9c8f84' },              // 水星
-      { size: 4.2, color: '#e6c58e' },              // 金星
-      { size: 4.6, color: '#5b8ff0', moon: true },  // 地球
-      { size: 3.6, color: '#d1603f' },              // 火星
-      { size: 11,  color: '#d8a56e' },              // 木星
-      { size: 9,   color: '#e0c084', ring: true },  // 土星
-      { size: 6.5, color: '#9fd8e0' },              // 天王星
-      { size: 6.2, color: '#5a78e8' },              // 海王星
+      { size: 4.5,  color: '#9c8f84' },              // 水星
+      { size: 7,    color: '#e6c58e' },              // 金星
+      { size: 7.5,  color: '#5b8ff0', moon: true },  // 地球
+      { size: 6,    color: '#d1603f' },              // 火星
+      { size: 17,   color: '#d8a56e' },              // 木星
+      { size: 14,   color: '#e0c084', ring: true },  // 土星
+      { size: 10.5, color: '#9fd8e0' },              // 天王星
+      { size: 10,   color: '#5a78e8' },              // 海王星
     ];
     // ケプラー第3法則: 角速度 ∝ r^-1.5（地球の公転を約40秒に設定）
     const wEarth = 0.0026;
@@ -484,7 +485,7 @@ const solar = {
 
     // 太陽（かすかに脈動）
     // 小画面では水星軌道を飲み込まないよう画面スケールに比例させる
-    const glowBase = Math.min(42, this.maxR * 0.13);
+    const glowBase = Math.min(64, this.maxR * 0.155);
     const glowR = glowBase + Math.sin(this.t * 0.03) * glowBase * 0.07;
     let grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
     grd.addColorStop(0, 'rgba(255,244,214,0.95)');
@@ -552,7 +553,7 @@ const solar = {
         p.moonA += 0.025 * k;
         ctx.fillStyle = '#c9c9d4';
         ctx.beginPath();
-        ctx.arc(x + Math.cos(p.moonA) * 9.5, y + Math.sin(p.moonA) * 9.5, 1.4, 0, TAU);
+        ctx.arc(x + Math.cos(p.moonA) * 14, y + Math.sin(p.moonA) * 14, 2.2, 0, TAU);
         ctx.fill();
       }
     }
