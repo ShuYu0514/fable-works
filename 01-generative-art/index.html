@@ -419,22 +419,24 @@ const solar = {
     this.comets = [];
     const maxR = Math.min(W, H) * 0.5 - 24;
     this.maxR = maxR;
-    const fr = [0.19, 0.26, 0.33, 0.40, 0.54, 0.67, 0.81, 0.94];
-    // サイズは実比率でなくビジュアル優先
+    const fr = [0.20, 0.29, 0.38, 0.47, 0.61, 0.74, 0.87, 0.97];
+    // サイズは実比率でなくビジュアル優先。小画面では少し縮める
+    const ss = 0.55 + 0.45 * Math.min(1, maxR / 368);
     const defs = [
-      { size: 4.5,  color: '#9c8f84' },              // 水星
-      { size: 7,    color: '#e6c58e' },              // 金星
-      { size: 7.5,  color: '#5b8ff0', moon: true },  // 地球
-      { size: 6,    color: '#d1603f' },              // 火星
-      { size: 17,   color: '#d8a56e' },              // 木星
-      { size: 14,   color: '#e0c084', ring: true },  // 土星
-      { size: 10.5, color: '#9fd8e0' },              // 天王星
-      { size: 10,   color: '#5a78e8' },              // 海王星
+      { size: 9,  color: '#9c8f84' },              // 水星
+      { size: 14, color: '#e6c58e' },              // 金星
+      { size: 15, color: '#5b8ff0', moon: true },  // 地球
+      { size: 12, color: '#d1603f' },              // 火星
+      { size: 34, color: '#d8a56e' },              // 木星
+      { size: 28, color: '#e0c084', ring: true },  // 土星
+      { size: 21, color: '#9fd8e0' },              // 天王星
+      { size: 20, color: '#5a78e8' },              // 海王星
     ];
     // ケプラー第3法則: 角速度 ∝ r^-1.5（地球の公転を約40秒に設定）
     const wEarth = 0.0026;
     this.planets = defs.map((d, i) => ({
       ...d,
+      size: d.size * ss,
       r: fr[i] * maxR,
       w: wEarth * Math.pow(fr[2] / fr[i], 1.5),
       a: Math.random() * TAU,
@@ -475,7 +477,7 @@ const solar = {
     }
 
     // 軌道リング
-    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
     ctx.lineWidth = 1;
     for (const p of this.planets) {
       ctx.beginPath();
@@ -521,9 +523,9 @@ const solar = {
       const ux = Math.cos(p.a), uy = Math.sin(p.a);  // 太陽と反対向きの単位ベクトル
       if (p.ring) {
         ctx.strokeStyle = 'rgba(224,192,132,0.5)';
-        ctx.lineWidth = 1.6;
+        ctx.lineWidth = 2.4;
         ctx.beginPath();
-        ctx.ellipse(x, y, p.size * 2.2, p.size * 0.8, -0.45, 0, TAU);
+        ctx.ellipse(x, y, p.size * 2.0, p.size * 0.72, -0.45, 0, TAU);
         ctx.stroke();
       }
       ctx.fillStyle = p.color;
@@ -544,16 +546,17 @@ const solar = {
       if (p.ring) {
         // 環の手前側を惑星の上に描き直す
         ctx.strokeStyle = 'rgba(224,192,132,0.5)';
-        ctx.lineWidth = 1.6;
+        ctx.lineWidth = 2.4;
         ctx.beginPath();
-        ctx.ellipse(x, y, p.size * 2.2, p.size * 0.8, -0.45, 0, Math.PI);
+        ctx.ellipse(x, y, p.size * 2.0, p.size * 0.72, -0.45, 0, Math.PI);
         ctx.stroke();
       }
       if (p.moon) {
         p.moonA += 0.025 * k;
+        const mr = p.size + 8;
         ctx.fillStyle = '#c9c9d4';
         ctx.beginPath();
-        ctx.arc(x + Math.cos(p.moonA) * 14, y + Math.sin(p.moonA) * 14, 2.2, 0, TAU);
+        ctx.arc(x + Math.cos(p.moonA) * mr, y + Math.sin(p.moonA) * mr, 3, 0, TAU);
         ctx.fill();
       }
     }
