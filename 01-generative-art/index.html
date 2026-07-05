@@ -419,7 +419,8 @@ const solar = {
     this.comets = [];
     const maxR = Math.min(W, H) * 0.5 - 24;
     this.maxR = maxR;
-    const fr = [0.20, 0.29, 0.38, 0.47, 0.61, 0.74, 0.87, 0.97];
+    // 軌道間隔は「隣の惑星と半径合計+余白」が入る配分（正面通過でも重ならない）
+    const fr = [0.185, 0.252, 0.362, 0.468, 0.575, 0.76, 0.915, 1.0];
     // サイズは実比率でなくビジュアル優先。小画面では少し縮める
     const ss = 0.55 + 0.45 * Math.min(1, maxR / 368);
     const defs = [
@@ -427,10 +428,10 @@ const solar = {
       { size: 14, color: '#e6c58e' },              // 金星
       { size: 15, color: '#5b8ff0', moon: true },  // 地球
       { size: 12, color: '#d1603f' },              // 火星
-      { size: 34, color: '#d8a56e' },              // 木星
-      { size: 28, color: '#e0c084', ring: true },  // 土星
-      { size: 21, color: '#9fd8e0' },              // 天王星
-      { size: 20, color: '#5a78e8' },              // 海王星
+      { size: 27, color: '#d8a56e' },              // 木星
+      { size: 23, color: '#e0c084', ring: true },  // 土星
+      { size: 16, color: '#9fd8e0' },              // 天王星
+      { size: 15, color: '#5a78e8' },              // 海王星
     ];
     // ケプラー第3法則: 角速度 ∝ r^-1.5（地球の公転を約40秒に設定）
     const wEarth = 0.0026;
@@ -476,15 +477,6 @@ const solar = {
       ctx.fillRect(st.x, st.y, st.s, st.s);
     }
 
-    // 軌道リング
-    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
-    ctx.lineWidth = 1;
-    for (const p of this.planets) {
-      ctx.beginPath();
-      ctx.arc(cx, cy, p.r, 0, TAU);
-      ctx.stroke();
-    }
-
     // 太陽（かすかに脈動）
     // 小画面では水星軌道を飲み込まないよう画面スケールに比例させる
     const glowBase = Math.min(64, this.maxR * 0.155);
@@ -525,7 +517,7 @@ const solar = {
         ctx.strokeStyle = 'rgba(224,192,132,0.5)';
         ctx.lineWidth = 2.4;
         ctx.beginPath();
-        ctx.ellipse(x, y, p.size * 2.0, p.size * 0.72, -0.45, 0, TAU);
+        ctx.ellipse(x, y, p.size * 1.75, p.size * 0.72, -0.45, 0, TAU);
         ctx.stroke();
       }
       ctx.fillStyle = p.color;
@@ -548,7 +540,7 @@ const solar = {
         ctx.strokeStyle = 'rgba(224,192,132,0.5)';
         ctx.lineWidth = 2.4;
         ctx.beginPath();
-        ctx.ellipse(x, y, p.size * 2.0, p.size * 0.72, -0.45, 0, Math.PI);
+        ctx.ellipse(x, y, p.size * 1.75, p.size * 0.72, -0.45, 0, Math.PI);
         ctx.stroke();
       }
       if (p.moon) {
