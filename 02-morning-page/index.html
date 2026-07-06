@@ -101,6 +101,7 @@
   }
   .hourly div span { display: block; }
   .hourly .h-icon { font-size: 15px; margin: 3px 0; }
+  .hourly .h-pop { font-size: 10px; margin-top: 2px; color: var(--sub); }
   .weather-msg { font-size: 13px; color: var(--sub); line-height: 1.7; padding: 8px 0; }
 
   /* ---- 位置設定 ---- */
@@ -144,15 +145,15 @@
   .quote-mark { font-size: 30px; opacity: 0.35; font-family: Georgia, serif; line-height: 1; }
   .quote {
     font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
-    font-size: 19px;
+    font-size: 20px;
     line-height: 2.05;
     margin: 10px 2px 18px;
     font-weight: 500;
     color: var(--quote);
   }
-  .quote.long { font-size: 17px; line-height: 1.95; }
-  .quote.short { font-size: 22px; }
-  .quote-src { font-size: 12px; letter-spacing: 0.05em; color: var(--sub); }
+  .quote.long { font-size: 18px; line-height: 1.95; }
+  .quote.short { font-size: 23px; }
+  .quote-src { font-size: 16px; letter-spacing: 0.05em; color: var(--sub); }
   .quote-src::before { content: "— "; }
 
   /* ---- フッター ---- */
@@ -352,7 +353,7 @@ async function loadWeather() {
     const url = "https://api.open-meteo.com/v1/forecast"
       + `?latitude=${loc.lat}&longitude=${loc.lon}`
       + "&current=temperature_2m,weather_code,is_day"
-      + "&hourly=temperature_2m,weather_code"
+      + "&hourly=temperature_2m,weather_code,precipitation_probability"
       + "&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset"
       + "&timezone=auto&forecast_days=1";
     const r = await fetch(url);
@@ -379,7 +380,9 @@ async function loadWeather() {
       const [, dIcon, nIcon] = wmo(j.hourly.weather_code[h]);
       const hIcon = h >= sunriseH && h < sunsetH ? dIcon : nIcon;
       const t = Math.round(j.hourly.temperature_2m[h]);
-      return `<div><span>${h}時</span><span class="h-icon">${hIcon}</span><span>${t}°</span></div>`;
+      const pop = (j.hourly.precipitation_probability || [])[h];
+      const popHtml = pop == null ? "" : `<span class="h-pop">${pop}%</span>`;
+      return `<div><span>${h}時</span><span class="h-icon">${hIcon}</span><span>${t}°</span>${popHtml}</div>`;
     }).join("");
 
     card.innerHTML = `

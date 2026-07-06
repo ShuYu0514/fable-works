@@ -1,7 +1,7 @@
 /* 朝のワンページ — Service Worker
    シェル（HTML/JS/quotes/アイコン）はキャッシュしてオフラインでも開けるようにする。
    天気API（open-meteo.com）はキャッシュせず常にネットワークへ。 */
-const CACHE = "morning-page-v1";
+const CACHE = "morning-page-v2";
 const SHELL = [
   "./",
   "./index.html",
